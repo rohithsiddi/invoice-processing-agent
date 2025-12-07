@@ -39,7 +39,7 @@ INGEST → EXTRACT → CLASSIFY → ENRICH → VALIDATE → RETRIEVE → MATCH
 
 | Component | Purpose |
 |-----------|---------|
-| **LangGraph Nodes** | 14 deterministic processing stages |
+| **LangGraph Nodes** | 13 deterministic processing stages |
 | **MCP Clients** | ATLAS (external data) + COMMON (internal utilities) |
 | **Bigtool Picker** | LLM-based OCR selection + YAML-based tool selection |
 | **FastAPI Server** | REST API + Web UI for workflow management |
@@ -137,13 +137,6 @@ REVIEWER_EMAILS=reviewer@company.com
 MATCH_THRESHOLD=0.85
 TOLERANCE_PERCENTAGE=5.0
 AUTO_APPROVE_THRESHOLD=1000.00
-```
-
-### **Database Setup**
-
-```bash
-# Initialize database
-PYTHONPATH=. python -c "from core.models.database import init_db; init_db()"
 ```
 
 ### **Run the Application**
