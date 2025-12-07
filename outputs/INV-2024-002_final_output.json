@@ -1,13 +1,13 @@
 {
-  "invoice_id": "INV-20251207153813-65e17d95",
+  "invoice_id": "INV-20251207154203-bb16cb58",
   "workflow_status": "POSTED",
-  "completion_timestamp": "2025-12-07T15:38:16.396772",
+  "completion_timestamp": "2025-12-07T15:42:20.164020",
   "invoice_data": {
     "vendor_name": "ABC Corporation",
-    "invoice_number": "INV-2024-001",
+    "invoice_number": "INV-2024-002",
     "invoice_date": "2024-12-06",
     "due_date": "2025-01-05",
-    "total_amount": 3012.0,
+    "total_amount": 3300.0,
     "currency": "USD",
     "line_items": [
       {
@@ -19,8 +19,8 @@
       {
         "description": "Consulting Hours",
         "quantity": 1,
-        "unit_price": 1000.0,
-        "amount": 1000.0
+        "unit_price": 1288.0,
+        "amount": 1288.0
       },
       {
         "description": "Software License",
@@ -31,26 +31,26 @@
     ]
   },
   "processing_results": {
-    "ocr_confidence": 0.531875,
+    "ocr_confidence": 0.5315909090909091,
     "invoice_type": "standard",
     "validation_passed": true,
     "validation_errors": [],
-    "match_score": 1.0,
-    "match_result": "MATCHED"
+    "match_score": 0.6,
+    "match_result": "FAILED"
   },
   "approval_posting": {
-    "approval_status": "AUTO_APPROVED",
-    "approver": null,
-    "approval_reason": null,
-    "posting_status": null,
-    "erp_transaction_id": null,
-    "posted_at": null
+    "approval_status": "HUMAN_APPROVED",
+    "approver": "reviewer@system.com",
+    "approval_reason": "Human reviewer approved invoice ($3,300.00)",
+    "posting_status": "SUCCESS",
+    "erp_transaction_id": "ERP-TXN-24E8A0F2",
+    "posted_at": "2025-12-07T10:54:00Z"
   },
   "human_review": {
     "review_required": false,
     "hitl_checkpoint_id": null,
-    "human_decision": null,
-    "reviewer_id": null,
+    "human_decision": "ACCEPT",
+    "reviewer_id": "reviewer@system.com",
     "review_notes": null
   },
   "accounting": {
@@ -58,24 +58,24 @@
       {
         "account": "6000",
         "description": "Invoice Expense",
-        "debit": 3012.0,
+        "debit": 3300.0,
         "credit": 0,
-        "timestamp": "2025-12-07T15:38:15.837833"
+        "timestamp": "2025-12-07T15:42:19.870530"
       },
       {
         "account": "2000",
         "description": "Accounts Payable",
         "debit": 0,
-        "credit": 3012.0,
-        "timestamp": "2025-12-07T15:38:15.837837"
+        "credit": 3300.0,
+        "timestamp": "2025-12-07T15:42:19.870543"
       }
     ],
     "reconciliation_report": {
       "reconciled": true,
-      "reconciliation_date": "2025-12-07T15:38:15.837860",
+      "reconciliation_date": "2025-12-07T15:42:19.870572",
       "match_type": "manual",
-      "match_result": "MATCHED",
-      "invoice_amount": 3012.0,
+      "match_result": "FAILED",
+      "invoice_amount": 3300.0,
       "variance": 0.0,
       "variance_pct": 0.0,
       "within_tolerance": true,
@@ -89,17 +89,17 @@
   },
   "notifications": {
     "notification_sent": true,
-    "notification_type": "APPROVAL_NEEDED",
+    "notification_type": "SUCCESS",
     "notification_recipients": [
       "rohithsiddi7@gmail.com"
     ]
   },
   "metadata": {
-    "created_at": "2025-12-07T15:38:13.108870",
-    "updated_at": "2025-12-07T15:38:13.108879",
-    "file_path": "data/uploads/INV-20251207153813-65e17d95_WF-20251207153812_Invoice_1_Match.jpg",
+    "created_at": "2025-12-07T15:42:03.525051",
+    "updated_at": "2025-12-07T15:42:03.525109",
+    "file_path": "data/uploads/INV-20251207154203-bb16cb58_WF-20251207154203_Invoice_2_Mismatch.jpg",
     "file_type": "jpg",
     "file_size": null
   },
-  "payload_hash": "1e6ef0e5bea3aa88e27355529aaaf69a0747155402279b2d7f9bc0c5c6c1fd62"
+  "payload_hash": "dfdf4373aca8cc8f47931b4cd4b167a2ad7839d57745fe0284444ddafb7025ae"
 }

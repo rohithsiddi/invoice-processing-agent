@@ -39,7 +39,7 @@ INGEST → EXTRACT → CLASSIFY → ENRICH → VALIDATE → RETRIEVE → MATCH
 
 | Component | Purpose |
 |-----------|---------|
-| **LangGraph Nodes** | 13 deterministic processing stages |
+| **LangGraph Nodes** | 14 deterministic processing stages |
 | **MCP Clients** | ATLAS (external data) + COMMON (internal utilities) |
 | **Bigtool Picker** | LLM-based OCR selection + YAML-based tool selection |
 | **FastAPI Server** | REST API + Web UI for workflow management |
@@ -201,7 +201,7 @@ outputs/INV-2024-001_final_output.json
 Invoice-Processing-Agent/
 ├── app/
 │   ├── api/              # FastAPI server + endpoints
-│   ├── nodes/            # LangGraph workflow nodes (13 nodes)
+│   ├── nodes/            # LangGraph workflow nodes (14 nodes)
 │   └── workflow/         # Workflow orchestration
 ├── core/
 │   ├── config/           # Configuration (config.py, tools.yaml)

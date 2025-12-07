@@ -1,6 +1,3 @@
-"""
-Human Review API - FastAPI endpoints for HITL workflow
-"""
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
