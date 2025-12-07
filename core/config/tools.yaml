@@ -1,0 +1,46 @@
+# Tool Pool Configuration for BigtoolPicker
+# This file defines available tools for each capability
+# Updated to reflect actual tools used in the project
+# Note: OCR selection uses LLM Bigtool Picker (not this file)
+
+tool_pools:
+  # Vendor Enrichment Tools
+  enrichment:
+    - name: atlas_mcp
+      priority: 1
+      config:
+        mode: mock
+        data_path: data/atlas_samples
+      use_cases: [vendor_enrichment, mock_data]
+
+  # ERP Connectors
+  erp_connector:
+    - name: mock_erp
+      priority: 1
+      config:
+        mode: mock
+        data_path: data/atlas_samples
+      use_cases: [development, testing, demo]
+
+  # Database Tools
+  db:
+    - name: postgres
+      priority: 1
+      config:
+        db_url_env: DATABASE_URL
+      use_cases: [production, persistence, checkpoints]
+
+  # Email Services
+  email:
+    - name: sendgrid
+      priority: 1
+      config:
+        api_key_env: SENDGRID_API_KEY
+        from_email_env: SENDGRID_FROM_EMAIL
+      use_cases: [transactional_email, notifications, production]
+
+# Selection Strategy
+selection_strategy:
+  default: priority  # Use priority-based selection
+  fallback: true     # Fall back to next tool if primary fails
+  retry_count: 2     # Retry failed tool before fallback

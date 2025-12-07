@@ -1,0 +1,47 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data files
+data/*.pdf
+data/*.png
+data/*.jpg
+data/*.jpeg
+
+# Checkpoints
+checkpoints/*.db
+checkpoints/*.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp

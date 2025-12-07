@@ -1,0 +1,513 @@
+{
+    "version": "1.0",
+    "workflow_name": "InvoiceProcessing_v1",
+    "description": "LangGraph invoice processing with HITL checkpoint/resume, LLM-powered Bigtool picker for OCR selection (Tesseract/EasyOCR), regex parsing, PostgreSQL database, and SendGrid email notifications.",
+    "config": {
+        "match_threshold": 0.85,
+        "two_way_tolerance_pct": 5,
+        "human_review_queue": "checkpoints_table",
+        "checkpoint_table": "checkpoints",
+        "default_db": "postgresql://rohithsiddi@localhost:5432/invoice_processing"
+    },
+    "inputs": {
+        "invoice_payload": {
+            "invoice_id": "string",
+            "vendor_name": "string",
+            "vendor_tax_id": "string",
+            "invoice_date": "string",
+            "due_date": "string",
+            "amount": "number",
+            "currency": "string",
+            "line_items": [
+                {
+                    "desc": "string",
+                    "qty": "number",
+                    "unit_price": "number",
+                    "total": "number"
+                }
+            ],
+            "attachments": [
+                "string"
+            ]
+        }
+    },
+    "stages": [
+        {
+            "id": "INTAKE",
+            "mode": "deterministic",
+            "agent": "IngestNode",
+            "instructions": "Validate payload schema, persist raw invoice payload and attachments metadata. Return raw_id and ingest timestamp.",
+            "implementation": "app/nodes/ingest_node.py",
+            "tools_used": [
+                {
+                    "name": "Local File System",
+                    "purpose": "Store uploaded invoice files",
+                    "location": "data/uploads/"
+                },
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Store invoice metadata",
+                    "table": "invoices"
+                }
+            ],
+            "output_schema": {
+                "raw_id": "string",
+                "ingest_ts": "string",
+                "validated": "boolean"
+            }
+        },
+        {
+            "id": "UNDERSTAND",
+            "mode": "deterministic",
+            "agent": "ExtractNode",
+            "instructions": "Use LLM Bigtool Picker (OpenAI GPT-4o-mini) to intelligently select OCR tool from pool [Tesseract, EasyOCR] based on invoice characteristics. Extract text using selected OCR tool, then parse invoice fields using regex patterns.",
+            "implementation": "app/nodes/extract_node.py",
+            "bigtool_selection": {
+                "capability": "ocr",
+                "selector": "LLM Bigtool Picker (OpenAI GPT-4o-mini)",
+                "pool": [
+                    "tesseract",
+                    "easyocr"
+                ],
+                "context_factors": [
+                    "file_type",
+                    "file_size",
+                    "quality_hint",
+                    "has_handwriting",
+                    "language"
+                ],
+                "selection_logic": "LLM analyzes invoice characteristics and chooses: Tesseract for high-quality printed text (speed), EasyOCR for handwriting/low quality (accuracy)"
+            },
+            "tools_used": [
+                {
+                    "name": "LLM Bigtool Picker",
+                    "purpose": "Intelligently select best OCR tool from pool",
+                    "model": "OpenAI GPT-4o-mini",
+                    "implementation": "integrations/tools/llm_bigtool_picker.py",
+                    "agent_personality": "Langie - Invoice Processing LangGraph Agent"
+                },
+                {
+                    "name": "Tesseract OCR",
+                    "purpose": "Fast OCR for high-quality printed invoices",
+                    "version": "5.x",
+                    "strengths": [
+                        "Speed",
+                        "Printed text",
+                        "English language",
+                        "Low resource usage"
+                    ],
+                    "when_selected": "High-quality images, printed text, English language"
+                },
+                {
+                    "name": "EasyOCR",
+                    "purpose": "Deep learning OCR for handwriting and low quality",
+                    "version": "1.7.x",
+                    "strengths": [
+                        "Handwriting",
+                        "Low quality images",
+                        "Multi-language (80+)",
+                        "Complex layouts"
+                    ],
+                    "when_selected": "Handwritten invoices, low quality scans, non-English text"
+                },
+                {
+                    "name": "Regex Parsing",
+                    "purpose": "Parse extracted OCR text into structured invoice fields",
+                    "implementation": "Python regex patterns",
+                    "extracts": [
+                        "vendor_name",
+                        "invoice_number",
+                        "invoice_date",
+                        "due_date",
+                        "line_items",
+                        "total_amount"
+                    ]
+                }
+            ],
+            "output_schema": {
+                "extracted_text": "string",
+                "extracted_data": {
+                    "vendor_name": "string",
+                    "invoice_number": "string",
+                    "invoice_date": "string",
+                    "due_date": "string",
+                    "line_items": "array",
+                    "total_amount": "number"
+                },
+                "confidence_score": "number",
+                "ocr_tool_used": "string"
+            }
+        },
+        {
+            "id": "PREPARE",
+            "mode": "deterministic",
+            "agent": "NormalizeEnrichNode",
+            "instructions": "Normalize vendor name using COMMON MCP, enrich vendor profile via ATLAS MCP (mock data) and compute flags.",
+            "implementation": "app/nodes/enrich_node.py",
+            "tools_used": [
+                {
+                    "name": "COMMON MCP Server",
+                    "purpose": "Normalize vendor names",
+                    "method": "normalize_vendor_name()"
+                },
+                {
+                    "name": "ATLAS MCP Server (Mock)",
+                    "purpose": "Enrich vendor data with tax ID, address",
+                    "method": "enrich_vendor_data()",
+                    "note": "Uses mock data from data/atlas_samples/"
+                }
+            ],
+            "output_schema": {
+                "vendor_profile": {
+                    "normalized_name": "string",
+                    "tax_id": "string",
+                    "enrichment_meta": "object"
+                },
+                "normalized_invoice": {
+                    "amount": "number",
+                    "currency": "string",
+                    "line_items": "array"
+                },
+                "flags": {
+                    "missing_info": "array",
+                    "risk_score": "number"
+                }
+            }
+        },
+        {
+            "id": "VALIDATE",
+            "mode": "deterministic",
+            "agent": "ValidateNode",
+            "instructions": "Validate invoice data for completeness, check for duplicates in PostgreSQL, verify amounts and dates.",
+            "implementation": "app/nodes/validate_node.py",
+            "tools_used": [
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Check for duplicate invoices",
+                    "query": "SELECT * FROM invoices WHERE invoice_number = ?"
+                },
+                {
+                    "name": "Python Validation Logic",
+                    "purpose": "Validate required fields, date formats, amounts"
+                }
+            ],
+            "output_schema": {
+                "validation_result": "boolean",
+                "validation_errors": "array"
+            }
+        },
+        {
+            "id": "RETRIEVE",
+            "mode": "deterministic",
+            "agent": "ErpFetchNode",
+            "instructions": "Fetch POs, GRNs and historical invoices from ATLAS MCP (mock ERP data) to find candidate matches.",
+            "implementation": "app/nodes/retrieve_node.py",
+            "tools_used": [
+                {
+                    "name": "ATLAS MCP Server (Mock ERP)",
+                    "purpose": "Fetch Purchase Orders, GRNs, historical invoices",
+                    "methods": [
+                        "fetch_purchase_orders()",
+                        "fetch_grns()",
+                        "fetch_historical_invoices()"
+                    ],
+                    "note": "Uses mock data from data/atlas_samples/"
+                }
+            ],
+            "output_schema": {
+                "matched_pos": "array",
+                "matched_grns": "array",
+                "history": "array"
+            }
+        },
+        {
+            "id": "MATCH_TWO_WAY",
+            "mode": "deterministic",
+            "agent": "TwoWayMatcherNode",
+            "instructions": "Compute 2-way match score between invoice and PO using COMMON MCP. If match_score >= 0.85 set match_result='MATCHED' else 'FAILED'.",
+            "implementation": "app/nodes/match_two_way_node.py",
+            "tools_used": [
+                {
+                    "name": "COMMON MCP Server",
+                    "purpose": "Compute match score between invoice and PO",
+                    "method": "compute_match_score()",
+                    "algorithm": "Vendor match + Amount tolerance + Line item matching"
+                }
+            ],
+            "output_schema": {
+                "match_score": "number",
+                "match_result": "string",
+                "tolerance_pct": "number",
+                "match_evidence": "object"
+            }
+        },
+        {
+            "id": "CHECKPOINT_HITL",
+            "mode": "deterministic",
+            "agent": "CheckpointNode",
+            "instructions": "If match_result == 'FAILED' persist full state as checkpoint in PostgreSQL, send email via SendGrid. Return checkpoint_id and review_url. Pause workflow.",
+            "implementation": "app/nodes/checkpoint_hitl_node.py",
+            "trigger_condition": "input_state.match_result == 'FAILED'",
+            "tools_used": [
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Store checkpoint state for human review",
+                    "table": "checkpoints",
+                    "fields": [
+                        "hitl_checkpoint_id",
+                        "state_blob",
+                        "status"
+                    ]
+                },
+                {
+                    "name": "SendGrid",
+                    "purpose": "Send approval needed email to reviewers",
+                    "from": "rohithsiddi7@gmail.com",
+                    "template": "APPROVAL_NEEDED"
+                },
+                {
+                    "name": "ATLAS MCP Server",
+                    "purpose": "Send notification via send_notification()",
+                    "method": "send_notification(type='APPROVAL_NEEDED')"
+                }
+            ],
+            "output_schema": {
+                "checkpoint_id": "string",
+                "review_url": "string",
+                "paused_reason": "string"
+            }
+        },
+        {
+            "id": "HITL_DECISION",
+            "mode": "non-deterministic",
+            "agent": "HumanReviewNode",
+            "instructions": "Await human decision via web UI at /review. On ACCEPT resume to RECONCILE. On REJECT mark as REJECTED.",
+            "implementation": "app/api/main.py - /human-review/decision endpoint",
+            "tools_used": [
+                {
+                    "name": "Web UI",
+                    "purpose": "Display pending invoices for human review",
+                    "url": "http://localhost:8000/review",
+                    "template": "app/api/templates/review.html"
+                },
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Update checkpoint status based on decision",
+                    "update": "UPDATE checkpoints SET status = ?, decision = ?"
+                },
+                {
+                    "name": "LangGraph Checkpointer",
+                    "purpose": "Resume workflow from checkpoint",
+                    "method": "resume_from_checkpoint()"
+                }
+            ],
+            "output_schema": {
+                "human_decision": "string",
+                "reviewer_id": "string",
+                "resume_token": "string",
+                "next_stage": "string"
+            }
+        },
+        {
+            "id": "RECONCILE",
+            "mode": "deterministic",
+            "agent": "ReconciliationNode",
+            "instructions": "Create accounting entries (debits/credits) using COMMON MCP and reconciliation report.",
+            "implementation": "app/nodes/reconcile_node.py",
+            "tools_used": [
+                {
+                    "name": "COMMON MCP Server",
+                    "purpose": "Build accounting entries",
+                    "method": "build_accounting_entries()",
+                    "entries": [
+                        "Debit: Expenses",
+                        "Credit: Accounts Payable"
+                    ]
+                }
+            ],
+            "output_schema": {
+                "accounting_entries": "array",
+                "reconciliation_report": "object"
+            }
+        },
+        {
+            "id": "APPROVE",
+            "mode": "deterministic",
+            "agent": "ApprovalNode",
+            "instructions": "Apply approval policies: auto-approve under $5000, escalate above. Return approval_status.",
+            "implementation": "app/nodes/approve_node.py",
+            "tools_used": [
+                {
+                    "name": "Rule-based Approval Engine",
+                    "purpose": "Auto-approve or escalate based on amount",
+                    "rules": [
+                        "amount < 5000 → AUTO_APPROVED",
+                        "amount >= 5000 → REQUIRES_APPROVAL"
+                    ]
+                }
+            ],
+            "output_schema": {
+                "approval_status": "string",
+                "approver_id": "string"
+            }
+        },
+        {
+            "id": "POSTING",
+            "mode": "deterministic",
+            "agent": "PostingNode",
+            "instructions": "Post journal entries to mock ERP via ATLAS MCP and generate transaction ID.",
+            "implementation": "app/nodes/post_node.py",
+            "tools_used": [
+                {
+                    "name": "ATLAS MCP Server (Mock ERP)",
+                    "purpose": "Post invoice to ERP system",
+                    "method": "post_to_erp()",
+                    "note": "Generates mock ERP transaction ID (e.g., ERP-TXN-A48C644F)"
+                },
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Update invoice status to POSTED",
+                    "update": "UPDATE invoices SET status = 'POSTED', erp_transaction_id = ?"
+                }
+            ],
+            "output_schema": {
+                "posted": "boolean",
+                "erp_txn_id": "string",
+                "scheduled_payment_id": "string"
+            }
+        },
+        {
+            "id": "NOTIFY",
+            "mode": "deterministic",
+            "agent": "NotifyNode",
+            "instructions": "Send SUCCESS notification email via SendGrid to finance team.",
+            "implementation": "app/nodes/notify_node.py",
+            "tools_used": [
+                {
+                    "name": "SendGrid",
+                    "purpose": "Send success notification email",
+                    "from": "rohithsiddi7@gmail.com",
+                    "to": "rohithsiddi7@gmail.com",
+                    "template": "SUCCESS"
+                },
+                {
+                    "name": "ATLAS MCP Server",
+                    "purpose": "Send notification via send_notification()",
+                    "method": "send_notification(type='SUCCESS')"
+                }
+            ],
+            "output_schema": {
+                "notify_status": "object",
+                "notified_parties": "array"
+            }
+        },
+        {
+            "id": "COMPLETE",
+            "mode": "deterministic",
+            "agent": "CompleteNode",
+            "instructions": "Produce final payload and audit log entries. Mark workflow completed and persist to PostgreSQL.",
+            "implementation": "app/nodes/complete_node.py",
+            "tools_used": [
+                {
+                    "name": "PostgreSQL",
+                    "purpose": "Save final invoice and audit log",
+                    "tables": [
+                        "invoices",
+                        "audit_logs"
+                    ],
+                    "final_status": "COMPLETED"
+                }
+            ],
+            "output_schema": {
+                "final_payload": "object",
+                "audit_log": "array",
+                "status": "string"
+            }
+        }
+    ],
+    "error_handling": {
+        "retry_policy": {
+            "max_retries": 3,
+            "backoff_seconds": 2
+        },
+        "on_unrecoverable_error": {
+            "action": "persist_and_fail",
+            "notify": [
+                "ops_team"
+            ]
+        }
+    },
+    "human_review_api_contract": {
+        "list_pending_endpoint": {
+            "path": "/human-review/pending",
+            "method": "GET",
+            "implementation": "app/api/main.py",
+            "response_schema": {
+                "items": [
+                    {
+                        "hitl_checkpoint_id": "string",
+                        "invoice_id": "string",
+                        "vendor_name": "string",
+                        "amount": "number",
+                        "created_at": "string",
+                        "reason_for_hold": "string",
+                        "review_url": "string",
+                        "match_score": "number"
+                    }
+                ]
+            }
+        },
+        "decision_endpoint": {
+            "path": "/human-review/decision",
+            "method": "POST",
+            "implementation": "app/api/main.py",
+            "request_schema": {
+                "hitl_checkpoint_id": "string",
+                "decision": "string",
+                "notes": "string",
+                "reviewer_id": "string"
+            },
+            "response_schema": {
+                "resume_token": "string",
+                "next_stage": "string",
+                "message": "string"
+            }
+        }
+    },
+    "bigtool_implementation": {
+        "concept": "Intelligent tool selection from a pool based on context using LLM reasoning",
+        "implementation": "integrations/tools/llm_bigtool_picker.py",
+        "llm_model": "OpenAI GPT-4o-mini",
+        "agent_personality": "Langie - Invoice Processing LangGraph Agent",
+        "current_usage": {
+            "ocr_selection": {
+                "capability": "ocr",
+                "pool": [
+                    "tesseract",
+                    "easyocr"
+                ],
+                "selector": "LLM analyzes invoice characteristics",
+                "fallback": "Rule-based selection if OpenAI unavailable"
+            }
+        },
+        "selection_logs": "All Bigtool decisions are logged with reasoning for audit trail"
+    },
+    "actual_technology_stack": {
+        "ocr": {
+            "bigtool_picker": "OpenAI GPT-4o-mini for intelligent selection",
+            "tesseract": "Tesseract 5.x (fast, printed text)",
+            "easyocr": "EasyOCR 1.7.x (handwriting, low quality)"
+        },
+        "parsing": "Python regex patterns for field extraction",
+        "database": "PostgreSQL 15",
+        "email": "SendGrid API",
+        "mcp_servers": {
+            "common": "Mock implementation for vendor normalization, matching, accounting",
+            "atlas": "Mock implementation for vendor enrichment, ERP, notifications"
+        },
+        "file_storage": "Local filesystem (data/uploads/)",
+        "web_framework": "FastAPI with Jinja2 templates",
+        "workflow_engine": "LangGraph with PostgreSQL checkpointer"
+    },
+    "notes": "This implementation demonstrates intelligent Bigtool selection using OpenAI GPT-4o-mini. The LLM analyzes invoice characteristics (file type, quality, handwriting, language) and dynamically selects the best OCR tool from the pool [Tesseract, EasyOCR]. Tesseract is chosen for high-quality printed invoices (speed), while EasyOCR is selected for handwritten or low-quality scans (accuracy). The system uses regex parsing for field extraction, PostgreSQL for persistence, SendGrid for email notifications, and mock MCP servers (ATLAS & COMMON) for ERP/enrichment capabilities. HITL checkpoints are stored in PostgreSQL and accessible via web UI at http://localhost:8000/review. The ERP posting is simulated but generates realistic transaction IDs viewable at http://localhost:8000/erp-view."
+}

@@ -1,0 +1,27 @@
+{
+    "grn_number": "GRN-2024-001",
+    "po_number": "PO-2024-001",
+    "vendor_id": "VND-ABC-001",
+    "vendor_name": "ABC Corporation",
+    "received_date": "2024-11-20",
+    "status": "RECEIVED",
+    "items_received": [
+        {
+            "description": "Professional Services",
+            "quantity": 1,
+            "condition": "ACCEPTED"
+        },
+        {
+            "description": "Consulting Hours",
+            "quantity": 1,
+            "condition": "ACCEPTED"
+        },
+        {
+            "description": "Software License",
+            "quantity": 1,
+            "condition": "ACCEPTED"
+        }
+    ],
+    "received_by": "John Doe",
+    "notes": "All items received in good condition"
+}

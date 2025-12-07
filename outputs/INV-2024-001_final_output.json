@@ -1,0 +1,105 @@
+{
+  "invoice_id": "INV-20251207152350-85dc992c",
+  "workflow_status": "POSTED",
+  "completion_timestamp": "2025-12-07T15:23:55.559514",
+  "invoice_data": {
+    "vendor_name": "ABC Corporation",
+    "invoice_number": "INV-2024-001",
+    "invoice_date": "2024-12-06",
+    "due_date": "2025-01-05",
+    "total_amount": 3012.0,
+    "currency": "USD",
+    "line_items": [
+      {
+        "description": "Professional Services",
+        "quantity": 1,
+        "unit_price": 1500.0,
+        "amount": 1500.0
+      },
+      {
+        "description": "Consulting Hours",
+        "quantity": 1,
+        "unit_price": 1000.0,
+        "amount": 1000.0
+      },
+      {
+        "description": "Software License",
+        "quantity": 1,
+        "unit_price": 512.0,
+        "amount": 512.0
+      }
+    ]
+  },
+  "processing_results": {
+    "ocr_confidence": 0.531875,
+    "invoice_type": "standard",
+    "validation_passed": true,
+    "validation_errors": [],
+    "match_score": 1.0,
+    "match_result": "MATCHED"
+  },
+  "approval_posting": {
+    "approval_status": "AUTO_APPROVED",
+    "approver": null,
+    "approval_reason": null,
+    "posting_status": null,
+    "erp_transaction_id": null,
+    "posted_at": null
+  },
+  "human_review": {
+    "review_required": false,
+    "hitl_checkpoint_id": null,
+    "human_decision": null,
+    "reviewer_id": null,
+    "review_notes": null
+  },
+  "accounting": {
+    "entries": [
+      {
+        "account": "6000",
+        "description": "Invoice Expense",
+        "debit": 3012.0,
+        "credit": 0,
+        "timestamp": "2025-12-07T15:23:55.051125"
+      },
+      {
+        "account": "2000",
+        "description": "Accounts Payable",
+        "debit": 0,
+        "credit": 3012.0,
+        "timestamp": "2025-12-07T15:23:55.051133"
+      }
+    ],
+    "reconciliation_report": {
+      "reconciled": true,
+      "reconciliation_date": "2025-12-07T15:23:55.051159",
+      "match_type": "manual",
+      "match_result": "MATCHED",
+      "invoice_amount": 3012.0,
+      "variance": 0.0,
+      "variance_pct": 0.0,
+      "within_tolerance": true,
+      "variance_reason": "No PO - manual approval"
+    }
+  },
+  "vendor_info": {
+    "vendor_id": "VND-ABC-001",
+    "vendor_category": null,
+    "is_approved_vendor": true
+  },
+  "notifications": {
+    "notification_sent": true,
+    "notification_type": "APPROVAL_NEEDED",
+    "notification_recipients": [
+      "rohithsiddi7@gmail.com"
+    ]
+  },
+  "metadata": {
+    "created_at": "2025-12-07T15:23:50.910009",
+    "updated_at": "2025-12-07T15:23:50.910017",
+    "file_path": "data/uploads/INV-20251207152350-85dc992c_WF-20251207152350_Invoice_1_Match.jpg",
+    "file_type": "jpg",
+    "file_size": null
+  },
+  "payload_hash": "5146a846a4ce0de74916ddc0dfa4b8638c58c86d4c84f487eb7453d67a516a91"
+}

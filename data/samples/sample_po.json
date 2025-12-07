@@ -1,0 +1,30 @@
+{
+    "po_number": "PO-2024-001",
+    "vendor_id": "VND-ABC-001",
+    "vendor_name": "ABC Corporation",
+    "po_date": "2024-11-15",
+    "total_amount": 3012.00,
+    "status": "OPEN",
+    "line_items": [
+        {
+            "description": "Professional Services",
+            "quantity": 1,
+            "unit_price": 1500.00,
+            "amount": 1500.00
+        },
+        {
+            "description": "Consulting Hours",
+            "quantity": 1,
+            "unit_price": 1000.00,
+            "amount": 1000.00
+        },
+        {
+            "description": "Software License",
+            "quantity": 1,
+            "unit_price": 512.00,
+            "amount": 512.00
+        }
+    ],
+    "subtotal": 3012.00,
+    "currency": "USD"
+}

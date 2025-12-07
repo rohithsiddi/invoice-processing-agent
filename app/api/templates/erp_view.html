@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP System - Posted Invoices</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 {
+            color: #1e3c72;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .header-left .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(30, 60, 114, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #1e3c72;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            color: #1e3c72;
+            font-size: 2.2em;
+            font-weight: bold;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .invoice-table th {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        .invoice-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .invoice-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-posted {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        .view-btn {
+            background: #1e3c72;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .view-btn:hover {
+            background: #2a5298;
+            transform: translateY(-1px);
+        }
+
+        .gl-entries {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .gl-entry {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .gl-entry:last-child {
+            border-bottom: none;
+        }
+
+        .gl-header {
+            font-weight: bold;
+            color: #1e3c72;
+            border-bottom: 2px solid #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .refresh-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .detail-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .close-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .close-btn:hover {
+            background: #d32f2f;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .detail-item {
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: #1e3c72;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>🏢 ERP System</h1>
+                <p class="subtitle">Posted Invoices & Financial Transactions</p>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-btn">📊 Dashboard</a>
+                <a href="/review" class="nav-btn">👤 Review Queue</a>
+                <button class="refresh-btn" onclick="loadPostedInvoices()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Posted</div>
+                <div class="stat-value" id="totalPosted">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Amount</div>
+                <div class="stat-value" id="totalAmount">$0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">This Month</div>
+                <div class="stat-value" id="thisMonth">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending Payment</div>
+                <div class="stat-value" id="pendingPayment">0</div>
+            </div>
+        </div>
+
+        <!-- Posted Invoices Table -->
+        <div class="card">
+            <h2>📋 Posted Invoices</h2>
+            <div id="invoiceTableContainer">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📦</div>
+                    <p>Loading posted invoices...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="detail-modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Invoice Details</h2>
+                <button class="close-btn" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load posted invoices on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPostedInvoices();
+            // Auto-refresh every 10 seconds
+            setInterval(loadPostedInvoices, 10000);
+        });
+
+        async function loadPostedInvoices() {
+            try {
+                const response = await fetch('/api/erp-posted-invoices');
+                const invoices = await response.json();
+
+                updateStats(invoices);
+                renderInvoiceTable(invoices);
+            } catch (error) {
+                console.error('Error loading invoices:', error);
+            }
+        }
+
+        function updateStats(invoices) {
+            const totalPosted = invoices.length;
+            const totalAmount = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+            const thisMonth = invoices.filter(inv => {
+                const date = new Date(inv.created_at);
+                const now = new Date();
+                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            }).length;
+
+            document.getElementById('totalPosted').textContent = totalPosted;
+            document.getElementById('totalAmount').textContent = `$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('thisMonth').textContent = thisMonth;
+            document.getElementById('pendingPayment').textContent = totalPosted;
+        }
+
+        function renderInvoiceTable(invoices) {
+            const container = document.getElementById('invoiceTableContainer');
+
+            if (invoices.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>No posted invoices yet. Process an invoice to see it here!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>ERP Transaction ID</th>
+                            <th>Invoice Number</th>
+                            <th>Vendor</th>
+                            <th>Amount</th>
+                            <th>Posted Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invoices.map(inv => `
+                            <tr>
+                                <td><strong>${inv.erp_transaction_id || 'N/A'}</strong></td>
+                                <td>${inv.invoice_number || 'N/A'}</td>
+                                <td>${inv.vendor_name || 'Unknown'}</td>
+                                <td><strong>$${(inv.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></td>
+                                <td>${new Date(inv.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                                <td><span class="status-badge status-posted">POSTED</span></td>
+                                <td>
+                                    <button class="view-btn" onclick='viewDetails(${JSON.stringify(inv)})'>
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function viewDetails(invoice) {
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('modalContent');
+
+            content.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">ERP Transaction ID</div>
+                        <div class="detail-value">${invoice.erp_transaction_id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Invoice Number</div>
+                        <div class="detail-value">${invoice.invoice_number || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Vendor</div>
+                        <div class="detail-value">${invoice.vendor_name || 'Unknown'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Total Amount</div>
+                        <div class="detail-value">$${(invoice.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Invoice Date</div>
+                        <div class="detail-value">${invoice.invoice_date || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Approval Status</div>
+                        <div class="detail-value">${invoice.approval_status || 'AUTO_APPROVED'}</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #1e3c72; margin: 30px 0 15px 0;">General Ledger Entries</h3>
+                <div class="gl-entries">
+                    <div class="gl-entry gl-header">
+                        <div>Account</div>
+                        <div>Debit</div>
+                        <div>Credit</div>
+                    </div>
+                    <div class="gl-entry">
+                        <div>60000 - Expenses</div>
+                        <div>$${(invoice.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                        <div>-</div>
+                    </div>
+                    <div class="gl-entry">
+                        <div>20000 - Accounts Payable</div>
+                        <div>-</div>
+                        <div>$${(invoice.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #1e3c72;">
+                    <strong style="color: #1e3c72;">📌 Posting Information</strong>
+                    <p style="margin-top: 10px; color: #666;">
+                        This invoice has been successfully posted to the ERP system and is now part of the financial records.
+                        Payment will be processed according to vendor payment terms.
+                    </p>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
